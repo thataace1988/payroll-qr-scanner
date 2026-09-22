@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Payroll QR Scanner</title>
+
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #183c2b;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .scanner-card {
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      border-radius: 24px;
+      padding: 25px;
+      text-align: center;
+      box-shadow: 0 15px 40px rgba(0,0,0,.25);
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #183c2b;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 20px;
+    }
+
+    #qr-reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 15px;
+    }
+
+    #result {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f3f6f3;
+      color: #183c2b;
+      font-size: 14px;
+      min-height: 45px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="scanner-card">
+
+    <div class="title">
+      PAYROLL QR SCANNER
+    </div>
+
+    <div class="subtitle">
+      Scan Employee QR Code
+    </div>
+
+    <div id="qr-reader"></div>
+
+    <div id="result">
+      Starting camera...
+    </div>
+
+  </div>
+
+  <script>
+
+    function startScanner() {
+
+      const result =
+        document.getElementById('result');
+
+      const scanner =
+        new Html5Qrcode('qr-reader');
+
+      scanner.start(
+
+        {
+          facingMode: 'environment'
+        },
+
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          }
+        },
+
+        function(decodedText) {
+
+          result.innerHTML =
+            '<strong>QR DETECTED</strong><br>' +
+            decodedText;
+
+          scanner.stop();
+
+        },
+
+        function(errorMessage) {
+          // Normal scanning feedback.
+        }
+
+      ).catch(function(error) {
+
+        result.innerText =
+          'Camera error: ' + error;
+
+      });
+
+    }
+
+    startScanner();
+
+  </script>
+
+</body>
+</html>
