@@ -87,7 +87,6 @@
 
   <script>
 
-
 function startScanner() {
 
   const result = document.getElementById('result');
@@ -96,7 +95,7 @@ function startScanner() {
   result.innerText = 'Starting camera...';
 
   scanner.start(
-    { facingMode: "user" },
+    { facingMode: { ideal: "user" } },
 
     {
       fps: 10,
@@ -108,56 +107,105 @@ function startScanner() {
 
     function(decodedText) {
 
-      result.innerText = 'QR detected. Checking employee...';
+      result.innerText =
+        'QR detected. Getting GPS location...';
 
       scanner.stop().then(function() {
 
-        const callbackName =
-          'qrCallback_' + Date.now();
+        if (!navigator.geolocation) {
+          result.innerText =
+            'GPS is not supported on this device.';
+          return;
+        }
 
-        window[callbackName] = function(data) {
+        navigator.geolocation.getCurrentPosition(
 
-          if (data.success) {
+          function(position) {
 
-            result.innerHTML =
-              '<strong>EMPLOYEE FOUND</strong><br>' +
-              data.employee.employeeId +
-              ' - ' +
-              data.employee.fullName;
+            const latitude =
+              position.coords.latitude;
 
-          } else {
+            const longitude =
+              position.coords.longitude;
 
             result.innerText =
-              'QR Error: ' + data.message;
+              'GPS detected. Recording attendance...';
 
+            const callbackName =
+              'attendanceCallback_' + Date.now();
+
+            window[callbackName] = function(data) {
+
+              if (data.success) {
+
+                result.innerHTML =
+                  '<strong>ATTENDANCE RECORDED</strong><br><br>' +
+                  data.employee.employeeId +
+                  '<br>' +
+                  data.employee.fullName;
+
+              } else {
+
+                result.innerText =
+                  'Attendance Error: ' +
+                  data.message;
+
+              }
+
+              delete window[callbackName];
+            };
+
+            const webAppUrl =
+              'https://script.google.com/macros/s/AKfycbwfBd3I_jQpcbbMwnq0WweNTlF0Svgi0yRVf7LDbw0snOToMNzYvrIbXs9AF7_PSy_mbw/exec';
+
+            const script =
+              document.createElement('script');
+
+            const deviceId =
+              'ANDROID-' +
+              navigator.userAgent
+                .substring(0, 50);
+
+            script.src =
+              webAppUrl +
+              '?action=recordAttendanceByQR' +
+              '&qr=' +
+              encodeURIComponent(decodedText) +
+              '&latitude=' +
+              encodeURIComponent(latitude) +
+              '&longitude=' +
+              encodeURIComponent(longitude) +
+              '&deviceId=' +
+              encodeURIComponent(deviceId) +
+              '&callback=' +
+              callbackName;
+
+            script.onerror = function() {
+
+              result.innerText =
+                'Unable to connect to the attendance system.';
+
+              delete window[callbackName];
+            };
+
+            document.body.appendChild(script);
+
+          },
+
+          function(error) {
+
+            result.innerText =
+              'Unable to get GPS location. Please allow location access.';
+
+          },
+
+          {
+            enableHighAccuracy: true,
+            timeout: 15000,
+            maximumAge: 0
           }
 
-          delete window[callbackName];
-        };
-
-        const webAppUrl =
-          'https://script.google.com/macros/s/AKfycbwfBd3I_jQpcbbMwnq0WweNTlF0Svgi0yRVf7LDbw0snOToMNzYvrIbXs9AF7_PSy_mbw/exec';
-
-        const script =
-          document.createElement('script');
-
-        script.src =
-          webAppUrl +
-          '?action=lookupEmployeeByQR' +
-          '&qr=' +
-          encodeURIComponent(decodedText) +
-          '&callback=' +
-          callbackName;
-
-        script.onerror = function() {
-
-          result.innerText =
-            'Unable to connect to the attendance system.';
-
-          delete window[callbackName];
-        };
-
-        document.body.appendChild(script);
+        );
 
       }).catch(function(error) {
 
@@ -182,9 +230,10 @@ function startScanner() {
       'Camera error: ' + error;
 
   });
+
 }
 
-startScanner();
+window.addEventListener('load', startScanner);
 
 </script>
   </script>
