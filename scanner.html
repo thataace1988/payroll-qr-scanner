@@ -87,7 +87,85 @@
 
   <script>
 
-    function startScanner() {
+    function startQRScanner() {
+  const scanner = new Html5Qrcode("qr-reader");
+
+  scanner.start(
+    { facingMode: "user" },
+    {
+      fps: 10,
+      qrbox: { width: 220, height: 220 }
+    },
+
+    function(decodedText) {
+
+      document.getElementById('qr-result').innerText =
+        'QR detected. Checking employee...';
+
+      scanner.stop().then(function() {
+
+        const callbackName =
+          'qrCallback_' + Date.now();
+
+        window[callbackName] = function(result) {
+
+          if (result.success) {
+
+            document.getElementById('qr-result').innerText =
+              'Employee found: ' +
+              result.employee.employeeId +
+              ' - ' +
+              result.employee.fullName;
+
+          } else {
+
+            document.getElementById('qr-result').innerText =
+              'QR Error: ' + result.message;
+
+          }
+
+          delete window[callbackName];
+        };
+
+        const script = document.createElement('script');
+
+        const webAppUrl =
+          'https://script.google.com/macros/s/AKfycbwfBd3I_jQpcbbMwnq0WweNTlF0Svgi0yRVf7LDbw0snOToMNzYvrIbXs9AF7_PSy_mbw/exec';
+
+        script.src =
+          webAppUrl +
+          '?action=lookupEmployeeByQR' +
+          '&qr=' + encodeURIComponent(decodedText) +
+          '&callback=' + callbackName;
+
+        script.onerror = function() {
+          document.getElementById('qr-result').innerText =
+            'Unable to connect to the attendance system.';
+
+          delete window[callbackName];
+        };
+
+        document.body.appendChild(script);
+
+      }).catch(function(error) {
+
+        document.getElementById('qr-result').innerText =
+          'Scanner error: ' + error;
+
+      });
+    },
+
+    function(errorMessage) {
+      // Ignore normal scanning errors
+    }
+
+  ).catch(function(error) {
+
+    document.getElementById('qr-result').innerText =
+      'Unable to open camera: ' + error;
+
+  });
+}
 
       const result =
         document.getElementById('result');
