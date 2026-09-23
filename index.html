@@ -132,63 +132,70 @@ function startScanner() {
               'GPS detected. Recording attendance...';
 
             const callbackName =
-              'attendanceCallback_' + Date.now();
+  'attendanceCallback_' + Date.now();
 
-            window[callbackName] = function(data) {
+let responseReceived = false;
 
-              if (data.success) {
+const webAppUrl =
+  'https://script.google.com/macros/s/AKfycbwfBd3I_jQpcbbMwnq0WweNTlF0Svgi0yRVf7LDbw0snOToMNzYvrIbXs9AF7_PSy_mbw/exec';
 
-                result.innerHTML =
-                  '<strong>ATTENDANCE RECORDED</strong><br><br>' +
-                  data.employee.employeeId +
-                  '<br>' +
-                  data.employee.fullName;
+const script =
+  document.createElement('script');
 
-              } else {
+const deviceId =
+  'ANDROID-' +
+  navigator.userAgent.substring(0, 50);
 
-                result.innerText =
-                  'Attendance Error: ' +
-                  data.message;
+window[callbackName] = function(data) {
 
-              }
+  responseReceived = true;
 
-              delete window[callbackName];
-            };
+  if (data.success) {
 
-            const webAppUrl =
-              'https://script.google.com/macros/s/AKfycbwfBd3I_jQpcbbMwnq0WweNTlF0Svgi0yRVf7LDbw0snOToMNzYvrIbXs9AF7_PSy_mbw/exec';
+    result.innerHTML =
+      '<strong>ATTENDANCE RECORDED</strong><br><br>' +
+      data.employee.employeeId +
+      '<br>' +
+      data.employee.fullName;
 
-            const script =
-              document.createElement('script');
+  } else {
 
-            const deviceId =
-              'ANDROID-' +
-              navigator.userAgent
-                .substring(0, 50);
+    result.innerText =
+      'Attendance Error: ' +
+      data.message;
 
-            script.src =
-              webAppUrl +
-              '?action=recordAttendanceByQR' +
-              '&qr=' +
-              encodeURIComponent(decodedText) +
-              '&latitude=' +
-              encodeURIComponent(latitude) +
-              '&longitude=' +
-              encodeURIComponent(longitude) +
-              '&deviceId=' +
-              encodeURIComponent(deviceId) +
-              '&callback=' +
-              callbackName;
+  }
 
-            script.onerror = function() {
+  delete window[callbackName];
+};
 
-              result.innerText =
-                'Unable to connect to the attendance system.';
+script.src =
+  webAppUrl +
+  '?action=recordAttendanceByQR' +
+  '&qr=' +
+  encodeURIComponent(decodedText) +
+  '&latitude=' +
+  encodeURIComponent(latitude) +
+  '&longitude=' +
+  encodeURIComponent(longitude) +
+  '&deviceId=' +
+  encodeURIComponent(deviceId) +
+  '&callback=' +
+  callbackName;
 
-              delete window[callbackName];
-            };
+document.body.appendChild(script);
 
-            document.body.appendChild(script);
+setTimeout(function() {
+
+  if (!responseReceived) {
+
+    result.innerText =
+      'No response from attendance system.';
+
+    delete window[callbackName];
+  }
+
+}, 10000);
 
           },
 
