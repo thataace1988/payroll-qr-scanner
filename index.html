@@ -152,13 +152,28 @@ window[callbackName] = function(data) {
 
   if (data.success) {
 
-    result.innerHTML =
-      '<strong>ATTENDANCE RECORDED</strong><br><br>' +
-      data.employee.employeeId +
-      '<br>' +
-      data.employee.fullName;
+  const attendance = data.attendance || {};
 
-  } else {
+  result.innerHTML =
+    '<strong>✅ ATTENDANCE RECORDED</strong><br><br>' +
+    '<strong>Employee:</strong> ' +
+    data.employee.employeeId +
+    '<br>' +
+    data.employee.fullName +
+    '<br><br>' +
+    '<strong>Event:</strong> ' +
+    (attendance.eventType || 'Attendance') +
+    '<br>' +
+    '<strong>Branch:</strong> ' +
+    (attendance.branchName || data.employee.branchId || '') +
+    '<br>' +
+    '<strong>Time:</strong> ' +
+    (attendance.serverTimestamp || '') +
+    '<br>' +
+    '<strong>Method:</strong> ' +
+    (attendance.method || 'QR');
+
+} else {
 
     result.innerText =
       'Attendance Error: ' +
