@@ -9,6 +9,14 @@
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
   <style>
+    #gps-status {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f3f6f3;
+  color: #183c2b;
+  font-size: 13px;
+}
     * {
       box-sizing: border-box;
     }
@@ -78,6 +86,9 @@
     </div>
 
     <div id="qr-reader"></div>
+    <div id="gps-status">
+  📍 Checking GPS location...
+</div>
 
     <div id="result">
       Starting camera...
