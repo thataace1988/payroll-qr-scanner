@@ -98,14 +98,86 @@
 
   <script>
 
+let currentLatitude = null;
+let currentLongitude = null;
+
+
+// --------------------------------------------------
+// CHECK GPS FIRST
+// --------------------------------------------------
+
+function checkGPS() {
+
+  const gpsStatus =
+    document.getElementById('gps-status');
+
+  gpsStatus.innerText =
+    '📍 Getting your GPS location...';
+
+  if (!navigator.geolocation) {
+
+    gpsStatus.innerText =
+      '❌ GPS is not supported on this device.';
+
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+
+    function(position) {
+
+      currentLatitude =
+        position.coords.latitude;
+
+      currentLongitude =
+        position.coords.longitude;
+
+      gpsStatus.innerHTML =
+        '✅ GPS location ready<br>' +
+        '<small>' +
+        currentLatitude.toFixed(6) +
+        ', ' +
+        currentLongitude.toFixed(6) +
+        '</small>';
+
+      startScanner();
+
+    },
+
+    function(error) {
+
+      gpsStatus.innerText =
+        '⚠️ GPS permission is required. Please allow location access.';
+
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+
+  );
+}
+
+
+// --------------------------------------------------
+// START QR SCANNER
+// --------------------------------------------------
+
 function startScanner() {
 
-  const result = document.getElementById('result');
-  const scanner = new Html5Qrcode('qr-reader');
+  const result =
+    document.getElementById('result');
 
-  result.innerText = 'Starting camera...';
+  const scanner =
+    new Html5Qrcode('qr-reader');
+
+  result.innerText =
+    'Starting camera...';
 
   scanner.start(
+
     { facingMode: "user" },
 
     {
@@ -119,125 +191,12 @@ function startScanner() {
     function(decodedText) {
 
       result.innerText =
-        'QR detected. Getting GPS location...';
+        'QR detected. Recording attendance...';
 
       scanner.stop().then(function() {
 
-        if (!navigator.geolocation) {
-          result.innerText =
-            'GPS is not supported on this device.';
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-
-          function(position) {
-
-            const latitude =
-              position.coords.latitude;
-
-            const longitude =
-              position.coords.longitude;
-
-            result.innerText =
-              'GPS detected. Recording attendance...';
-
-            const callbackName =
-  'attendanceCallback_' + Date.now();
-
-let responseReceived = false;
-
-const webAppUrl =
-  'https://script.google.com/macros/s/AKfycbwfBd3I_jQpcbbMwnq0WweNTlF0Svgi0yRVf7LDbw0snOToMNzYvrIbXs9AF7_PSy_mbw/exec';
-
-const script =
-  document.createElement('script');
-
-const deviceId =
-  'ANDROID-' +
-  navigator.userAgent.substring(0, 50);
-
-window[callbackName] = function(data) {
-
-  responseReceived = true;
-
-  if (data.success) {
-
-  const attendance = data.attendance || {};
-
-  result.innerHTML =
-    '<strong>✅ ATTENDANCE RECORDED</strong><br><br>' +
-    '<strong>Employee:</strong> ' +
-    data.employee.employeeId +
-    '<br>' +
-    data.employee.fullName +
-    '<br><br>' +
-    '<strong>Event:</strong> ' +
-    (attendance.eventType || 'Attendance') +
-    '<br>' +
-    '<strong>Branch:</strong> ' +
-    (attendance.branchName || data.employee.branchId || '') +
-    '<br>' +
-    '<strong>Time:</strong> ' +
-    (attendance.serverTimestamp || '') +
-    '<br>' +
-    '<strong>Method:</strong> ' +
-    (attendance.method || 'QR');
-
-} else {
-
-    result.innerText =
-      'Attendance Error: ' +
-      data.message;
-
-  }
-
-  delete window[callbackName];
-};
-
-script.src =
-  webAppUrl +
-  '?action=recordAttendanceByQR' +
-  '&qr=' +
-  encodeURIComponent(decodedText) +
-  '&latitude=' +
-  encodeURIComponent(latitude) +
-  '&longitude=' +
-  encodeURIComponent(longitude) +
-  '&deviceId=' +
-  encodeURIComponent(deviceId) +
-  '&callback=' +
-  callbackName;
-
-document.body.appendChild(script);
-
-setTimeout(function() {
-
-  if (!responseReceived) {
-
-    result.innerText =
-      'No response from attendance system.';
-
-    delete window[callbackName];
-  }
-
-}, 10000);
-
-          },
-
-          function(error) {
-
-            result.innerText =
-              'Unable to get GPS location. Please allow location access.';
-
-          },
-
-          {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 0
-          }
-
+        recordQRAttendance(
+          decodedText
         );
 
       }).catch(function(error) {
@@ -246,6 +205,7 @@ setTimeout(function() {
           'Scanner error: ' + error;
 
       });
+
     },
 
     function(errorMessage) {
@@ -266,7 +226,105 @@ setTimeout(function() {
 
 }
 
-window.addEventListener('load', startScanner);
+
+// --------------------------------------------------
+// RECORD QR ATTENDANCE
+// --------------------------------------------------
+
+function recordQRAttendance(qrToken) {
+
+  const callbackName =
+    'attendanceCallback_' + Date.now();
+
+  let responseReceived = false;
+
+  const webAppUrl =
+    'https://script.google.com/macros/s/AKfycbwfBd3I_jQpcbbMwnq0WweNTlF0Svgi0yRVf7LDbw0snOToMNzYvrIbXs9AF7_PSy_mbw/exec';
+
+  const script =
+    document.createElement('script');
+
+  const deviceId =
+    'ANDROID-' +
+    navigator.userAgent.substring(0, 50);
+
+  window[callbackName] =
+    function(data) {
+
+      responseReceived = true;
+
+      if (data.success) {
+
+        const attendance =
+          data.attendance || {};
+
+        document.getElementById('result').innerHTML =
+          '<strong>✅ ATTENDANCE RECORDED</strong><br><br>' +
+          '<strong>Employee:</strong><br>' +
+          data.employee.employeeId +
+          '<br>' +
+          data.employee.fullName +
+          '<br><br>' +
+          '<strong>Event:</strong> ' +
+          (attendance.eventType || 'Attendance') +
+          '<br>' +
+          '<strong>Branch:</strong> ' +
+          (attendance.branchName || '') +
+          '<br>' +
+          '<strong>Method:</strong> QR';
+
+      } else {
+
+        document.getElementById('result').innerText =
+          'Attendance Error: ' +
+          (data.message || 'Unknown error.');
+
+      }
+
+      delete window[callbackName];
+
+    };
+
+  script.src =
+    webAppUrl +
+    '?action=recordAttendanceByQR' +
+    '&qr=' +
+    encodeURIComponent(qrToken) +
+    '&latitude=' +
+    encodeURIComponent(currentLatitude) +
+    '&longitude=' +
+    encodeURIComponent(currentLongitude) +
+    '&deviceId=' +
+    encodeURIComponent(deviceId) +
+    '&callback=' +
+    callbackName;
+
+  document.body.appendChild(script);
+
+  setTimeout(function() {
+
+    if (!responseReceived) {
+
+      document.getElementById('result').innerText =
+        'No response from attendance system.';
+
+      delete window[callbackName];
+
+    }
+
+  }, 10000);
+
+}
+
+
+// --------------------------------------------------
+// START GPS WHEN PAGE LOADS
+// --------------------------------------------------
+
+window.addEventListener(
+  'load',
+  checkGPS
+);
 
 </script>
   </script>
