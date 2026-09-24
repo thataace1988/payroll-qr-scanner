@@ -132,6 +132,117 @@ function checkGPS() {
       currentLongitude =
         position.coords.longitude;
 
+      gpsStatus.innerText =
+        '📍 GPS detected. Checking branch...';
+
+      const callbackName =
+        'branchCallback_' + Date.now();
+
+      const webAppUrl =
+        'https://script.google.com/macros/s/AKfycbwfBd3I_jQpcbbMwnq0WweNTlF0Svgi0yRVf7LDbw0snOToMNzYvrIbXs9AF7_PSy_mbw/exec';
+
+      const script =
+        document.createElement('script');
+
+      window[callbackName] =
+        function(data) {
+
+          if (data && data.success) {
+
+            if (data.insideGeofence) {
+
+              gpsStatus.innerHTML =
+                '✅ <strong>' +
+                data.branchName +
+                '</strong><br>' +
+                'Within authorized area • ' +
+                data.distanceMeters +
+                ' meters away';
+
+            } else {
+
+              gpsStatus.innerHTML =
+                '⚠️ <strong>Outside authorized area</strong><br>' +
+                'Nearest: ' +
+                data.branchName +
+                ' • ' +
+                data.distanceMeters +
+                ' meters away';
+
+            }
+
+          } else {
+
+            gpsStatus.innerText =
+              '⚠️ Unable to identify branch.';
+
+          }
+
+          delete window[callbackName];
+
+          if (script.parentNode) {
+            script.parentNode.removeChild(script);
+          }
+
+          // Start camera after GPS/branch check
+          startScanner();
+
+        };
+
+      script.src =
+        webAppUrl +
+        '?action=detectBranchByGPS' +
+        '&latitude=' +
+        encodeURIComponent(currentLatitude) +
+        '&longitude=' +
+        encodeURIComponent(currentLongitude) +
+        '&callback=' +
+        callbackName;
+
+      document.body.appendChild(script);
+
+    },
+
+    function(error) {
+
+      gpsStatus.innerText =
+        '⚠️ GPS permission is required.';
+
+    },
+
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+
+  );
+}
+
+  const gpsStatus =
+    document.getElementById('gps-status');
+
+  gpsStatus.innerText =
+    '📍 Getting your GPS location...';
+
+  if (!navigator.geolocation) {
+
+    gpsStatus.innerText =
+      '❌ GPS is not supported on this device.';
+
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+
+    function(position) {
+
+      currentLatitude =
+        position.coords.latitude;
+
+      currentLongitude =
+        position.coords.longitude;
+
       gpsStatus.innerHTML =
         '✅ GPS location ready<br>' +
         '<small>' +
