@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Automatic DTR - Camera Test</title>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<style>
+body{font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:20px;background:#f5f7f5}
+h1{font-size:22px}
+#reader{width:100%;max-width:480px;margin:20px auto;background:#fff}
+#status{padding:12px;background:#fff;border-radius:8px;margin-top:15px}
+</style>
+</head>
+<body>
+<h1>Automatic DTR — Camera Test</h1>
+<div id="reader"></div>
+<div id="status">Starting camera...</div>
+<script>
+let scanner=null;
+function status(text,ok=false){
+  const el=document.getElementById('status');
+  el.textContent=text;
+  el.style.border=ok?'2px solid #198754':'1px solid #ddd';
+}
+async function startCamera(){
+  try{
+    scanner=new Html5Qrcode("reader");
+    await scanner.start(
+      {facingMode:"environment"},
+      {fps:10,qrbox:{width:250,height:250}},
+      decodedText=>status("QR detected: "+decodedText,true),
+      ()=>{}
+    );
+    status("Camera started successfully. Point the camera at a QR code.",true);
+  }catch(e){
+    console.error("CAMERA TEST ERROR:",e);
+    status("Camera failed: "+(e.message||e.name||e));
+  }
+}
+startCamera();
+</script>
+</body>
+</html>
